@@ -160,6 +160,7 @@ public class BioSystem {
         //once the edge microhabitat is sufficiently populated, this moves the immigration edge
         //microhabitat to the next microhabitat along
         int i_counter = 0; //no idea why i need to use i_counter instead of immigration_index=getBiofilmEdge()+1
+        int i_lim = Math.min(L, immigration_index+5);
         for(int i = 0; i < L; i++){
 
             microhabitats[i].setImmigration_zone(false);
@@ -290,16 +291,16 @@ public class BioSystem {
                 if(death_allocations[mh_index][bac_index] != 0) updated_microhabs[mh_index].removeABacterium(bac_index);
 
                 else{
-                     updated_microhabs[mh_index].replicateABacterium_x_N(bac_index, replication_allocations[mh_index][bac_index]);
+                    updated_microhabs[mh_index].replicateABacterium_x_N(bac_index, replication_allocations[mh_index][bac_index]);
 
-                     if(getBiofilmSize() > 1){
-                         //this statement ensures migration can only occur between biofilm microhabitats
-                         if(migration_allocations[mh_index][bac_index] != 0) migrate(updated_microhabs, mh_index, bac_index);
-                     }
+                    if(getBiofilmSize() > 1){
+                        //this statement ensures migration can only occur between biofilm microhabitats
+                        if(migration_allocations[mh_index][bac_index] != 0) migrate(updated_microhabs, mh_index, bac_index);
+                    }
 
-                     if(mh_index == immigration_index){
-                         if(detachment_allocations[bac_index] != 0) updated_microhabs[mh_index].removeABacterium(bac_index);
-                     }
+                    if(mh_index == immigration_index){
+                        if(detachment_allocations[bac_index] != 0) updated_microhabs[mh_index].removeABacterium(bac_index);
+                    }
                 }
             }
         }
@@ -335,7 +336,7 @@ public class BioSystem {
                 System.out.println("-----------------------------------------------------------------------------------------------");
 
                 String output = String.format("time elapsed: %.3f \ttotal N: %d \tbiofilm edge: %d \tbf_edge pop: %d \tbf_edge fracfull: %.3f \timmig index: %d",
-                bs.getTimeElapsed(), bs.getTotalN(), bs.getBiofilmEdge(), bs.getN_i(bs.getBiofilmEdge()), bs.microhabitats[bs.getBiofilmEdge()].fractionFull(), bs.getImmigration_index());
+                        bs.getTimeElapsed(), bs.getTotalN(), bs.getBiofilmEdge(), bs.getN_i(bs.getBiofilmEdge()), bs.microhabitats[bs.getBiofilmEdge()].fractionFull(), bs.getImmigration_index());
 
                 String output2 = String.format("time elapsed: %.3f \ttotal N: %d \tbiofilm edge: %d",
                         bs.getTimeElapsed(), bs.getTotalN(), bs.getBiofilmEdge());
@@ -487,6 +488,9 @@ public class BioSystem {
     }
 
 
+
+
+
     public static DataBox getAllData(int i){
 
         int K = 500, L = 500;
@@ -530,6 +534,61 @@ public class BioSystem {
         }
 
         return new DataBox(popSizes, popDistbs, biofilmEdges, avgGenotypeDistbs, genoStDevs);
+    }
+
+
+
+    public static int getThicknessReachedAfterATime(double duration, int i){
+        int K = 500, L = 500;
+        double c_max = 10., alpha = 0.01, tau = 0.01;
+
+        BioSystem bs = new BioSystem(L, K, alpha, c_max, tau);
+        int nUpdates = 20;
+        double interval = duration/nUpdates;
+        boolean alreadyRecorded = false;
+
+        while(bs.timeElapsed <= duration){
+
+
+            if((bs.getTimeElapsed()%interval >= 0. && bs.getTimeElapsed()%interval <= 0.02*interval) && !alreadyRecorded){
+
+                int max_poss_pop = bs.getBiofilmSize()*K;
+                int total_N = bs.getTotalN();
+                System.out.println("rep : "+i+"\tt: "+bs.getTimeElapsed()+"\tpop size: "+total_N+"/"+max_poss_pop+"\tbf_edge: "+bs.getBiofilmEdge());
+
+                alreadyRecorded = true;
+            }
+            if(bs.getTimeElapsed()%interval >= 0.1*interval) alreadyRecorded = false;
+
+
+
+            bs.performAction();
+        }
+
+        return bs.getBiofilmEdge();
+    }
+
+
+    public static void getBiofilmThicknessHistoInParallel(int nReps){
+        long startTime = System.currentTimeMillis();
+
+        int K = 500, L = 500;
+        double c_max = 10., alpha = 0.01, tau = 0.01;
+
+        double duration = 1680.; //10 week duration
+
+
+        int[] mh_index_reached = new int[nReps];
+        String index_reached_filename = "pyrithione-testing-mh_index_reached_histo-t="+String.valueOf(duration)+"parallel";
+
+        IntStream.range(0, nReps).parallel().forEach(i -> mh_index_reached[i] = BioSystem.getThicknessReachedAfterATime(duration, i));
+
+        Toolbox.writeHistoArrayToFile(index_reached_filename, mh_index_reached);
+
+        long finishTime = System.currentTimeMillis();
+        String diff = Toolbox.millisToShortDHMS(finishTime - startTime);
+        System.out.println("results written to file");
+        System.out.println("Time taken: "+diff);
     }
 
 

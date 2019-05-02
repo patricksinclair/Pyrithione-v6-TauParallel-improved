@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 public class Toolbox {
 
 
+
     public static double averageOfArrayList(ArrayList<Double> listo){
 
         if(listo.size() > 0) {
@@ -83,6 +84,29 @@ public class Toolbox {
             }
         }
         return averagedResults;
+    }
+
+
+
+    public static void writeHistoArrayToFile(String filename, int[] inputData){
+        try {
+            File file = new File(filename+".txt");
+            if(!file.exists()) file.createNewFile();
+
+            FileWriter fw = new FileWriter(file.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+
+            int nReadings = inputData.length;
+
+            for(int i = 0; i < nReadings; i++){
+
+                String output = String.format("%d", inputData[i]);
+
+                bw.write(output);
+                bw.newLine();
+            }
+            bw.close();
+        }catch (IOException e){}
     }
 
 
