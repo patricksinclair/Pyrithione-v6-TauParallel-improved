@@ -186,7 +186,7 @@ public class BioSystem {
 
         double tau_step = tau;
         int biofilm_thickness = getBiofilmSize(); //the +1 includes the immigration microhab.
-        int biofilm_edge = getBiofilmEdge(); //this is the furthest index of biofilm. not including immig index
+        //int biofilm_edge = getBiofilmEdge(); //this is the furthest index of biofilm. not including immig index
         int[][] replication_allocations;
         int[][] death_allocations;
         int[][] migration_allocations;
